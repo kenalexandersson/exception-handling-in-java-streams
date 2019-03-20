@@ -1,16 +1,22 @@
 package org.kense.exceptionhandling;
 
+import lombok.AllArgsConstructor;
+
 import java.util.Optional;
 import java.util.function.Function;
 
+/**
+ * A generic wrapper with two possibilities. It can either be a Left or a Right but never both.
+ * Both left and right can be of any types. By convention, the Left signifies a failure case result
+ * and the Right signifies a success.
+ *
+ * @param <L> the type of value for left
+ * @param <R> the type of value for right
+ */
+@AllArgsConstructor
 public class Either<L, R> {
     private final L left;
     private final R right;
-
-    private Either(L left, R right) {
-        this.left = left;
-        this.right = right;
-    }
 
     public static <L,R> Either<L,R> left(L value) {
         return new Either(value, null);
@@ -21,6 +27,14 @@ public class Either<L, R> {
     }
 
 
+    /**
+     * Applies the given {@link CheckedFunction} and returns an Either with the result.
+     * @param function the function to apply.
+     * @param <T> the type of the function parameter
+     * @param <R> the type of the returned value
+     * @return an Either holding successful execution value to the right, or if exception was thrown, a left containing
+     * the exception.
+     */
     public static <T,R> Function<T, Either> lift(CheckedFunction<T,R> function) {
         return t -> {
             try {
@@ -31,6 +45,14 @@ public class Either<L, R> {
         };
     }
 
+    /**
+     * Applies the given {@link CheckedFunction} and returns an Either with the result.
+     * @param function the function to apply.
+     * @param <T> the type of the function parameter
+     * @param <R> the type of the returned value
+     * @return an Either holding successful execution value to the right, or if exception was thrown, a left containing
+     * a Pair object holding the exception and the original parameter value
+     */
     public static <T,R> Function<T, Either> liftWithValue(CheckedFunction<T,R> function) {
         return t -> {
             try {
@@ -76,9 +98,6 @@ public class Either<L, R> {
     }
 
     public String toString() {
-        if (isLeft()) {
-            return String.format("Left(%s)", left);
-        }
-        return String.format("Right(%s)", right);
+        return isLeft() ? String.format("Left(%s)", left) : String.format("Right(%s)", right);
     }
 }

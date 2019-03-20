@@ -1,21 +1,19 @@
 package org.kense.exceptionhandling;
 
+import lombok.RequiredArgsConstructor;
+import lombok.ToString;
+import lombok.Value;
+
+/**
+ * A generic wrapper signifying a 'pair'. Both types of the pair could be of any type.
+ * @param <F> the type of value of the first member in the pair
+ * @param <S> the type of value of the second memeber in the pair.
+ */
+@Value
+@ToString
+@RequiredArgsConstructor(staticName = "of")
 public class Pair<F,S> {
 
     private final F first;
     private final S second;
-
-    public static <F,S> Pair<F,S> of(F fst, S snd) {
-        return new Pair<>(fst,snd);
-    }
-
-    private Pair(F first, S second) {
-        this.first = first;
-        this.second = second;
-    }
-
-    @Override
-    public String toString() {
-        return String.format("Pair{first=%s, second=%s}", first, second);
-    }
 }

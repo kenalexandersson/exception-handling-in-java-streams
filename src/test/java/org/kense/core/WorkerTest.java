@@ -8,14 +8,14 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class WorkerTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(WorkerTest.class);
+
     @Test
-    public void name() {
+    public void basicUsage() {
 
         List<Integer> numberList = new ArrayList<>();
         numberList.add(1);
@@ -32,27 +32,7 @@ public class WorkerTest {
     }
 
     @Test
-    public void name2() {
-
-        List<Integer> numberList = new ArrayList<>();
-        numberList.add(1);
-        numberList.add(2);
-        numberList.add(3);
-        numberList.add(4);
-        numberList.add(5);
-
-        List<Integer> collect = numberList.stream()
-                .map(Either.liftWithValue(Worker::timesTen))
-                .filter(either -> either.getRight().isPresent())
-                .map((Function<Either, Optional<Integer>>) Either::getRight)
-                .map(Optional::get)
-                .collect(Collectors.toList());
-
-        collect.forEach(number -> LOGGER.info(number.toString()));
-    }
-
-    @Test
-    public void name3() {
+    public void successesAndFailures() {
 
         List<Integer> numberList = new ArrayList<>();
         numberList.add(1);
