@@ -1,13 +1,13 @@
-package org.kense.exceptionhandling;
+package org.kense;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class ExceptionHandlingInJavaStreamsApplication {
+public class ExceptionHandlingApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(ExceptionHandlingInJavaStreamsApplication.class, args);
+        SpringApplication.run(ExceptionHandlingApplication.class, args);
     }
 
 }

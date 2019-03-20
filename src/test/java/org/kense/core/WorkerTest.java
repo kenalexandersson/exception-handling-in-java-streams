@@ -1,10 +1,9 @@
-package org.kense.exceptionhandling;
+package org.kense.core;
 
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.kense.core.Worker;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.kense.exceptionhandling.Either;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,14 +11,9 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-@RunWith(SpringRunner.class)
-@SpringBootTest
-public class ExceptionHandlingInJavaStreamsApplicationTests {
+public class WorkerTest {
 
-    @Test
-    public void contextLoads() {
-    }
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(WorkerTest.class);
     @Test
     public void name() {
 
@@ -34,7 +28,7 @@ public class ExceptionHandlingInJavaStreamsApplicationTests {
                 .map(Either.liftWithValue(Worker::timesTen))
                 .collect(Collectors.toList());
 
-        eithers.forEach(System.out::println);
+        eithers.forEach(either -> LOGGER.info(either.toString()));
     }
 
     @Test
@@ -54,7 +48,7 @@ public class ExceptionHandlingInJavaStreamsApplicationTests {
                 .map(Optional::get)
                 .collect(Collectors.toList());
 
-        collect.forEach(System.out::println);
+        collect.forEach(number -> LOGGER.info(number.toString()));
     }
 
     @Test
@@ -73,7 +67,7 @@ public class ExceptionHandlingInJavaStreamsApplicationTests {
                 .map(Either::getRightAsInteger)
                 .collect(Collectors.toList());
 
-        successes.forEach(System.out::println);
+        successes.forEach(success -> LOGGER.info("Success: {}", success));
 
         List<Object> failures = numberList.stream()
                 .map(Either.liftWithValue(Worker::timesTen))
@@ -82,7 +76,7 @@ public class ExceptionHandlingInJavaStreamsApplicationTests {
                 .map(Optional::get)
                 .collect(Collectors.toList());
 
-        failures.forEach(System.out::println);
+        failures.forEach(failure -> LOGGER.warn("Failure: {}", failure));
     }
-}
 
+}
