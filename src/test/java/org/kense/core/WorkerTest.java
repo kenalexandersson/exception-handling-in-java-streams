@@ -2,6 +2,7 @@ package org.kense.core;
 
 import org.junit.Test;
 import org.kense.exceptionhandling.Either;
+import org.kense.exceptionhandling.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -9,6 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class WorkerTest {
 
@@ -45,18 +48,27 @@ public class WorkerTest {
                 .map(Either.liftWithValue(Worker::timesTen))
                 .filter(Either::isRight)
                 .map(Either::getRightAsInteger)
+                .peek(integer -> LOGGER.info("Success: {}", integer))
                 .collect(Collectors.toList());
 
-        successes.forEach(success -> LOGGER.info("Success: {}", success));
-
-        List<Object> failures = numberList.stream()
+        List<Pair> failures = numberList.stream()
                 .map(Either.liftWithValue(Worker::timesTen))
                 .filter(Either::isLeft)
                 .map(Either::getLeft)
                 .map(Optional::get)
+                .map(Pair.class::cast)
+                .peek(pair -> LOGGER.warn("Failure: {}", pair))
                 .collect(Collectors.toList());
 
-        failures.forEach(failure -> LOGGER.warn("Failure: {}", failure));
+        assertThat(successes)
+                .hasSize(3)
+                .containsExactly(10, 30, 50);
+
+        assertThat(failures)
+                .as("I don't like even number so I throw exception")
+                .hasSize(2)
+                .extracting("second")
+                .containsExactly(2, 4);
     }
 
 }
