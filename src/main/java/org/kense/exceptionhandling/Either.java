@@ -48,6 +48,7 @@ public class Either<L, R> {
     public Optional<R> getRight() {
         return Optional.ofNullable(right);
     }
+
     public Integer getRightAsInteger() {
         return (Integer) right;
     }
