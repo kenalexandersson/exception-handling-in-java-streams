@@ -1,0 +1,14 @@
+@startuml
+
+class Pair<F,S> {
+    - F first
+    - S second
+
+    .. factory method ..
+    + {static} <F,S> Pair<F,S> of(F first, S second)
+    .. accessors ..
+    + F getLeft()
+    + S getRight()
+}
+
+@enduml

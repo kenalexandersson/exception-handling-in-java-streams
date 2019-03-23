@@ -4,7 +4,7 @@ The example code in this project relies heavily on the article: https://dzone.co
 
 As you might have noticed, it is not possible to call a method that throws checked exception from inside a lambda or a method reference.
 
-Consider for example if we have a method `timesTen(int value)` that takes a value and multiplies it with 10. Furthermore, this method has the peculiar trait of not liking even numbers, so it will throw a java.lang.Exception for any even input it gets:
+Consider for example if we have a method `timesTen(int value)` that takes a value and multiplies it with 10. Furthermore, this method has the peculiar trait of not liking even numbers, so it will throw a `java.lang.Exception` for any even input it gets:
 
 [source,java]
 ----
@@ -57,14 +57,51 @@ List<Integer> multiplied = integers.stream()
         .collect(Collectors.toList());
 ----
 
-A more bothersome drawback with wrapping the exception to a RuntimeException as in the above example, is that the processing of the stream will stop immediately at the first encounter of an even number. What if you would like to get hold of all multiplications that succeeded, and all that failed?
+There are ways to move the exception handling into separate methods to get rid of  the lamda block (see the https://dzone.com/articles/exception-handling-in-java-streams[referenced article]), which all could do the trick if the only thing wanted is to wrap the Exception to a RuntimeException and then get on with it.
+
+== Uninterrupted processing of a stream
+A more bothersome drawback with wrapping the Exception to a RuntimeException is that the processing of the stream will stop immediately at the first encounter of an even number.
+
+What if you would like to process the entire stream content to get hold of all multiplications that succeeded, as well as all that failed?
+
+== Either
+
+The Either type is a common type in functional languages and not (yet) part of Java. Similar to the Optional type in Java, an Either is a generic wrapper with two possibilities. It can either be a Left or a Right but never both. Both left and right can be of any types. For instance, if we have an Either value, this value can either hold something of type Exception or of type Integer, `Either<Exception,Integer>` (or basically any conceivable types in _left_ and _right_).
+
+By convenience an Either has the Exception (or however the failure is expressed) to the _left_ and the successful value to the _right_.
+
+If we combine this with a `@FunctionalInterface` that declares a function throwing a Checked Exception, we are getting close to be able to "lift" a function that throws a checked exception and let it return an Either.
+
+The interface:
 
 [source,java]
 ----
-include::src/main/java/org/kense/exceptionhandling/CheckedFunction.java[]
+@FunctionalInterface
+public interface CheckedFunction<T,R> {
+    R apply(T t) throws Exception;
+}
 ----
 
+The Either class:
+
+// src/main/resources/plantuml/class-either generated through http://plantuml.com/plantuml/form
 image::http://www.plantuml.com/plantuml/png/bL3HIWCn47pFL-pZ7Mg_e9I2w5D02ABFSM-l5ynT9BiHfVJVJK9AQH5AyvJPcPqPTijYewJPAuNUCiEJaudYMj-R3UmLvFS06ZIDqe01utQJg0fNAnWjIeY_C9DCOU0ygimTx5ciE3n0DJipzZHAf-7R-aJzTNaiWPrf-cCm_H0c2V7VoDUozvmM51UMZ9fVZdOv-d4Y_AJXn1Vrs51_czbx_h-LOjTSMssBICndjL--YiBwjTx0ZgGSk-ilELEvSliJ-H629xk0uxPpEJxA3qfjQHdIxFy0[]
+
+Two methods are of particular interest here:
+
+* `<T,R> Function<T, Either> lift(CheckedFunction<T,R> function)`
+** Will take a function throwing a checked exception and return an `Either` with exception to the left, or successful value to the right
+* `<T,R> Function<T, Either> liftWithValue(CheckedFunction<T,R> function)`
+** Will take a function throwing a checked exception and return an `Either` with a `Pair` object holding information about the original value and the exception to the left, or successful value to the right
+
+[NOTE]
+====
+The `Pair` type is simply a class with the members `first` and `second`, which can be of any type.
+
+image::http://www.plantuml.com/plantuml/png/HSz1giCW58NXkQiumuINbnMKaf7ZWYkGgxP24i5xEoWXUw-njXcUN_t0YSLcUIwpejaousPZlkZ1NB4f0FY7HeYPfIq3zfHMf-eUHmHBal8BYvT7SgNKWpzi1PP8EpxQwQRGDNBuQVrNiqIUEMK-8Osx5ttSx_gMp95CVLdQhYQ_klA5Dm00[]
+====
+
+With these constructs in place, we are in a position to process our integer stream without interruptions.
 
 [source,java]
 ----
@@ -81,9 +118,9 @@ Will produce
 [source,console]
 ----
 08:01:37.179 [main] Right(10)
-08:01:37.184 [main] Left(java.lang.Exception: I don't like even numbers)
+08:01:37.184 [main] Left(java.lang.Exception: I despise even numbers: 2)
 08:01:37.184 [main] Right(30)
-08:01:37.184 [main] Left(java.lang.Exception: I don't like even numbers)
+08:01:37.184 [main] Left(java.lang.Exception: I despise even numbers: 4)
 08:01:37.184 [main] Right(50)
 ----
 
@@ -114,7 +151,7 @@ Will produce
 08:12:36.041 [main] INFO Success: 10
 08:12:36.052 [main] INFO Success: 30
 08:12:36.052 [main] INFO Success: 50
-08:12:36.056 [main] WARN Failure: Pair(first=2, second=java.lang.Exception: I don't like even numbers)
-08:12:36.064 [main] WARN Failure: Pair(first=4, second=java.lang.Exception: I don't like even numbers)
+08:12:36.056 [main] WARN Failure: Pair(first=2, second=java.lang.Exception: I despise even numbers: 2)
+08:12:36.064 [main] WARN Failure: Pair(first=4, second=java.lang.Exception: I despise even numbers: 4)
 
 ----
