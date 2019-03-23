@@ -13,9 +13,9 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class WorkerTest {
+public class MultiplierTest {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(WorkerTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MultiplierTest.class);
 
     @Test
     public void basicUsage() {
@@ -23,7 +23,7 @@ public class WorkerTest {
         List<Integer> integers = Arrays.asList(1, 2, 3, 4, 5);
 
         List<Either> eithers = integers.stream()
-                .map(Either.lift(Worker::timesTen))
+                .map(Either.lift(Multiplier::timesTen))
                 .collect(Collectors.toList());
 
         eithers.forEach(either -> LOGGER.info(either.toString()));
@@ -35,14 +35,14 @@ public class WorkerTest {
         List<Integer> integers = Arrays.asList(1, 2, 3, 4, 5);
 
         List<Integer> successes = integers.stream()
-                .map(Either.liftWithValue(Worker::timesTen))
+                .map(Either.liftWithValue(Multiplier::timesTen))
                 .filter(Either::isRight)
                 .map(Either::getRightAsInteger)
                 .peek(integer -> LOGGER.info("Success: {}", integer))
                 .collect(Collectors.toList());
 
         List<Pair> failures = integers.stream()
-                .map(Either.liftWithValue(Worker::timesTen))
+                .map(Either.liftWithValue(Multiplier::timesTen))
                 .filter(Either::isLeft)
                 .map(Either::getLeft)
                 .map(Optional::get)

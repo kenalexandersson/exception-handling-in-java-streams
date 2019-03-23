@@ -1,6 +1,6 @@
 package org.kense.core;
 
-public class Worker {
+public class Multiplier {
 
     public static int timesTen(int value) throws Exception {
 

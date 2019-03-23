@@ -2,31 +2,42 @@
 
 The example code in this project relies heavily on the article: https://dzone.com/articles/exception-handling-in-java-streams
 
-As you might have noticed, it is not possible from inside a lambda or as a method reference to call a method that throws checked exception.
+As you might have noticed, it is not possible to call a method that throws checked exception from inside a lambda or a method reference.
 
 Consider for example if we have a method `timesTen(int value)` that takes a value and multiplies it with 10. Furthermore, this method has the peculiar trait of not liking even numbers, so it will throw a java.lang.Exception for any even input it gets:
 
 [source,java]
 ----
-include::src/main/java/org/kense/core/Worker.java[]
+public class Multiplier {
+
+    public static int timesTen(int value) throws Exception {
+
+        if (value % 2 == 0) {
+            throw new Exception(String.format("I despise even numbers: %d", value));
+        }
+
+        return value * 10;
+    }
+}
 ----
 
-If we calls this method from inside a lambda or as a method reference, the compiler will complain.
+If we call this method from inside a lambda or as a method reference, the compiler will complain:
 
-.This will not compile
-[source,java,linenums]
+[source,java]
 ----
+// The calls to `Multiplier.timesTen(value)` will make the compiler complain
+// about "Unhandled exception: java.lang.Exception"
+
 List<Integer> integers = Arrays.asList(1, 2, 3, 4, 5);
 
 List<Integer> multiplied1 = integers.stream()
-        .map(value -> Worker.timesTen(value)) <1>
+        .map(value -> Multiplier.timesTen(value)) // Compiler error
         .collect(Collectors.toList());
 
 List<Integer> multiplied2 = integers.stream()
-        .map(Worker::timesTen) <1>
+        .map(Multiplier::timesTen) // Compiler error
         .collect(Collectors.toList());
 ----
-<1> The call on line 2 and 6 will make the compiler complain about _Unhandled exception: java.lang.Exception_.
 
 It is of course possible to introduce a try/catch block inside `.map()` and wrap the exception to a `RuntimeException` instead, but this tends to become unwieldy and above all unreadable (block lamdas should generally be avoided for this reason).
 
@@ -38,7 +49,7 @@ List<Integer> integers = Arrays.asList(1, 2, 3, 4, 5);
 List<Integer> multiplied = integers.stream()
         .map(value -> {
             try {
-                return Worker.timesTen(value);
+                return Multiplier.timesTen(value);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -53,36 +64,14 @@ A more bothersome drawback with wrapping the exception to a RuntimeException as 
 include::src/main/java/org/kense/exceptionhandling/CheckedFunction.java[]
 ----
 
-[plantuml]
-----
-@startuml
-
-class Either<L,R> {
-    - L Left
-    - R Right
-
-    .. factory methods ..
-    + {static} <L,R> Either<L,R> left(L value)
-    + {static} <L,R> Either<L,R> right(R value)
-    .. executors ..
-    + {static} <T,R> Function<T, Either> lift(CheckedFunction<T,R> function)
-    + {static} <T,R> Function<T, Either> liftWithValue(CheckedFunction<T,R> function)
-    .. accessors ..
-    + Optional<L> getLeft()
-    + Optional<R> getRight()
-    + boolean isLeft()
-    + boolean isRight()
-}
-
-@enduml
-----
+image:http://www.plantuml.com/plantuml/proxy?src=https://github.com/kenalexandersson/exception-handling-in-java-streams/tree/master/src/main/resources/plantuml/class-either.puml?cache=no[]
 
 [source,java]
 ----
 List<Integer> integers = Arrays.asList(1, 2, 3, 4, 5);
 
 List<Either> eithers = integers.stream()
-        .map(Either.lift(Worker::timesTen))
+        .map(Either.lift(Multiplier::timesTen))
         .collect(Collectors.toList());
 
 eithers.forEach(either -> LOGGER.info(either.toString()));
@@ -103,14 +92,14 @@ Will produce
 List<Integer> integers = Arrays.asList(1, 2, 3, 4, 5);
 
 List<Integer> successes = integers.stream()
-        .map(Either.liftWithValue(Worker::timesTen))
+        .map(Either.liftWithValue(Multiplier::timesTen))
         .filter(Either::isRight)
         .map(Either::getRightAsInteger)
         .peek(integer -> LOGGER.info("Success: {}", integer))
         .collect(Collectors.toList());
 
 List<Pair> failures = integers.stream()
-        .map(Either.liftWithValue(Worker::timesTen))
+        .map(Either.liftWithValue(Multiplier::timesTen))
         .filter(Either::isLeft)
         .map(Either::getLeft)
         .map(Optional::get)
