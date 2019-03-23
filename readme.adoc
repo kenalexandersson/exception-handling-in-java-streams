@@ -64,7 +64,7 @@ A more bothersome drawback with wrapping the exception to a RuntimeException as 
 include::src/main/java/org/kense/exceptionhandling/CheckedFunction.java[]
 ----
 
-image:http://www.plantuml.com/plantuml/proxy?src=https://github.com/kenalexandersson/exception-handling-in-java-streams/tree/master/src/main/resources/plantuml/class-either.puml?cache=no[]
+image::http://www.plantuml.com/plantuml/png/bL3HIWCn47pFL-pZ7Mg_e9I2w5D02ABFSM-l5ynT9BiHfVJVJK9AQH5AyvJPcPqPTijYewJPAuNUCiEJaudYMj-R3UmLvFS06ZIDqe01utQJg0fNAnWjIeY_C9DCOU0ygimTx5ciE3n0DJipzZHAf-7R-aJzTNaiWPrf-cCm_H0c2V7VoDUozvmM51UMZ9fVZdOv-d4Y_AJXn1Vrs51_czbx_h-LOjTSMssBICndjL--YiBwjTx0ZgGSk-ilELEvSliJ-H629xk0uxPpEJxA3qfjQHdIxFy0[]
 
 [source,java]
 ----
