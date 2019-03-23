@@ -1,0 +1,131 @@
+= Graceful exception handling in Java streams
+
+The example code in this project relies heavily on the article: https://dzone.com/articles/exception-handling-in-java-streams
+
+As you might have noticed, it is not possible from inside a lambda or as a method reference to call a method that throws checked exception.
+
+Consider for example if we have a method `timesTen(int value)` that takes a value and multiplies it with 10. Furthermore, this method has the peculiar trait of not liking even numbers, so it will throw a java.lang.Exception for any even input it gets:
+
+[source,java]
+----
+include::src/main/java/org/kense/core/Worker.java[]
+----
+
+If we calls this method from inside a lambda or as a method reference, the compiler will complain.
+
+.This will not compile
+[source,java,linenums]
+----
+List<Integer> integers = Arrays.asList(1, 2, 3, 4, 5);
+
+List<Integer> multiplied1 = integers.stream()
+        .map(value -> Worker.timesTen(value)) <1>
+        .collect(Collectors.toList());
+
+List<Integer> multiplied2 = integers.stream()
+        .map(Worker::timesTen) <1>
+        .collect(Collectors.toList());
+----
+<1> The call on line 2 and 6 will make the compiler complain about _Unhandled exception: java.lang.Exception_.
+
+It is of course possible to introduce a try/catch block inside `.map()` and wrap the exception to a `RuntimeException` instead, but this tends to become unwieldy and above all unreadable (block lamdas should generally be avoided for this reason).
+
+.Don't do this
+[source,java]
+----
+List<Integer> integers = Arrays.asList(1, 2, 3, 4, 5);
+
+List<Integer> multiplied = integers.stream()
+        .map(value -> {
+            try {
+                return Worker.timesTen(value);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        })
+        .collect(Collectors.toList());
+----
+
+A more bothersome drawback with wrapping the exception to a RuntimeException as in the above example, is that the processing of the stream will stop immediately at the first encounter of an even number. What if you would like to get hold of all multiplications that succeeded, and all that failed?
+
+[source,java]
+----
+include::src/main/java/org/kense/exceptionhandling/CheckedFunction.java[]
+----
+
+[plantuml]
+----
+@startuml
+
+class Either<L,R> {
+    - L Left
+    - R Right
+
+    .. factory methods ..
+    + {static} <L,R> Either<L,R> left(L value)
+    + {static} <L,R> Either<L,R> right(R value)
+    .. executors ..
+    + {static} <T,R> Function<T, Either> lift(CheckedFunction<T,R> function)
+    + {static} <T,R> Function<T, Either> liftWithValue(CheckedFunction<T,R> function)
+    .. accessors ..
+    + Optional<L> getLeft()
+    + Optional<R> getRight()
+    + boolean isLeft()
+    + boolean isRight()
+}
+
+@enduml
+----
+
+[source,java]
+----
+List<Integer> integers = Arrays.asList(1, 2, 3, 4, 5);
+
+List<Either> eithers = integers.stream()
+        .map(Either.lift(Worker::timesTen))
+        .collect(Collectors.toList());
+
+eithers.forEach(either -> LOGGER.info(either.toString()));
+----
+Will produce
+
+[source,console]
+----
+08:01:37.179 [main] Right(10)
+08:01:37.184 [main] Left(java.lang.Exception: I don't like even numbers)
+08:01:37.184 [main] Right(30)
+08:01:37.184 [main] Left(java.lang.Exception: I don't like even numbers)
+08:01:37.184 [main] Right(50)
+----
+
+[source,java]
+----
+List<Integer> integers = Arrays.asList(1, 2, 3, 4, 5);
+
+List<Integer> successes = integers.stream()
+        .map(Either.liftWithValue(Worker::timesTen))
+        .filter(Either::isRight)
+        .map(Either::getRightAsInteger)
+        .peek(integer -> LOGGER.info("Success: {}", integer))
+        .collect(Collectors.toList());
+
+List<Pair> failures = integers.stream()
+        .map(Either.liftWithValue(Worker::timesTen))
+        .filter(Either::isLeft)
+        .map(Either::getLeft)
+        .map(Optional::get)
+        .map(Pair.class::cast)
+        .peek(pair -> LOGGER.warn("Failure: {}", pair))
+        .collect(Collectors.toList());
+----
+Will produce
+
+[source,console]
+----
+08:12:36.041 [main] INFO Success: 10
+08:12:36.052 [main] INFO Success: 30
+08:12:36.052 [main] INFO Success: 50
+08:12:36.056 [main] WARN Failure: Pair(first=2, second=java.lang.Exception: I don't like even numbers)
+08:12:36.064 [main] WARN Failure: Pair(first=4, second=java.lang.Exception: I don't like even numbers)
+
+----

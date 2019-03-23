@@ -58,7 +58,7 @@ public class Either<L, R> {
             try {
                 return Either.right(function.apply(t));
             } catch (Exception ex) {
-                return Either.left(Pair.of(ex,t));
+                return Either.left(Pair.of(t,ex));
             }
         };
     }

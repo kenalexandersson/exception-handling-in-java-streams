@@ -6,7 +6,7 @@ import org.kense.exceptionhandling.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -20,15 +20,10 @@ public class WorkerTest {
     @Test
     public void basicUsage() {
 
-        List<Integer> numberList = new ArrayList<>();
-        numberList.add(1);
-        numberList.add(2);
-        numberList.add(3);
-        numberList.add(4);
-        numberList.add(5);
+        List<Integer> integers = Arrays.asList(1, 2, 3, 4, 5);
 
-        List<Either> eithers = numberList.stream()
-                .map(Either.liftWithValue(Worker::timesTen))
+        List<Either> eithers = integers.stream()
+                .map(Either.lift(Worker::timesTen))
                 .collect(Collectors.toList());
 
         eithers.forEach(either -> LOGGER.info(either.toString()));
@@ -37,21 +32,16 @@ public class WorkerTest {
     @Test
     public void successesAndFailures() {
 
-        List<Integer> numberList = new ArrayList<>();
-        numberList.add(1);
-        numberList.add(2);
-        numberList.add(3);
-        numberList.add(4);
-        numberList.add(5);
+        List<Integer> integers = Arrays.asList(1, 2, 3, 4, 5);
 
-        List<Integer> successes = numberList.stream()
+        List<Integer> successes = integers.stream()
                 .map(Either.liftWithValue(Worker::timesTen))
                 .filter(Either::isRight)
                 .map(Either::getRightAsInteger)
                 .peek(integer -> LOGGER.info("Success: {}", integer))
                 .collect(Collectors.toList());
 
-        List<Pair> failures = numberList.stream()
+        List<Pair> failures = integers.stream()
                 .map(Either.liftWithValue(Worker::timesTen))
                 .filter(Either::isLeft)
                 .map(Either::getLeft)
@@ -67,7 +57,7 @@ public class WorkerTest {
         assertThat(failures)
                 .as("I don't like even number so I throw exception")
                 .hasSize(2)
-                .extracting("second")
+                .extracting("first")
                 .containsExactly(2, 4);
     }
 
